@@ -1,0 +1,23 @@
+{
+  "name": "wsc26-orchestration",
+  "version": "1.0.0",
+  "description": "Multi-Agent Orchestration Patterns – Workshop Demo Repo",
+  "type": "module",
+  "scripts": {
+    "sequential": "tsx --env-file .env src/topologies/sequential.ts",
+    "fanout": "tsx --env-file .env src/topologies/fanout.ts",
+    "supervisor": "tsx --env-file .env src/topologies/supervisor.ts",
+    "council": "tsx --env-file .env src/topologies/council.ts",
+    "broken": "tsx --env-file .env src/topologies/broken-to-debug.ts",
+    "broken:checked": "tsx --env-file .env src/topologies/broken-checked.ts",
+    "broken:injection": "tsx --env-file .env src/topologies/broken-injection.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.106.0",
+    "tsx": "^4.16.0"
+  }
+}

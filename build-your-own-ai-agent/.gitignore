@@ -1,0 +1,12 @@
+# generated stacks (the local-output fallback writes here)
+output/*
+!output/.gitkeep
+
+# local Claude Code settings (personal, not shared)
+.claude/settings.local.json
+
+# misc
+__pycache__/
+.env
+.DS_Store
+node_modules/

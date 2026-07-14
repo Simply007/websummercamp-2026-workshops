@@ -1,0 +1,43 @@
+# Run the SAME committed agent, headless, on a schedule.
+# This is the "deploy" payoff: the agent in .claude/ isn't tied to your laptop, 
+# it runs unattended in CI from the exact files your team shares.
+#
+# TEMPLATE: verify the package name and flags against your Claude Code version,
+# and add Stacklist MCP secrets if you want CI to publish for real.
+
+name: Weekly stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic to curate"
+        default: "trending resources for shipping AI agents"
+  schedule:
+    - cron: "0 9 * * 1"   # Mondays, 09:00 UTC
+
+jobs:
+  build-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Build the stack (headless)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          TOPIC="${{ github.event.inputs.topic || 'trending resources for shipping AI agents' }}"
+          claude -p "/build-stack \"$TOPIC\"" --permission-mode acceptEdits
+
+      - name: Upload the result
+        uses: actions/upload-artifact@v4
+        with:
+          name: stack
+          path: output/

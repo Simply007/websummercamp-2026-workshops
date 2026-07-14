@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+*.zip
+
+# Live AWS deployment identifiers from the Kiro workshop
+spec-driven-development-with-kiro/expense-tiger-agentic/cdk-outputs.json
+
+# CDK build output
+cdk.out/
+AWSCLIV2.pkg

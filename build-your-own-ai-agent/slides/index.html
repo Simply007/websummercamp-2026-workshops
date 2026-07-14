@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build a team agent in Claude Code</title>
+<!--
+  Implemented from the Claude Design source: slides/claude-design/Build a team agent.dc.html
+  Self-contained: no CDN, no runtime, opens and presents in any browser, offline.
+  Controls:  ← →  navigate · S  speaker notes · F  fullscreen
+-->
+<style>
+  html,body{margin:0;height:100%;background:#0c0c0c;overflow:hidden;}
+  *{text-wrap:pretty;}
+  #deck{position:fixed;inset:0;display:grid;place-items:center;}
+  #stage{width:1920px;height:1080px;position:relative;transform-origin:center center;}
+  #stage > section{position:absolute;inset:0;display:none !important;}
+  #stage > section.active{display:flex !important;}
+  #bar{position:fixed;left:0;bottom:0;height:6px;width:0;background:#FF6A00;z-index:50;transition:width .2s ease;}
+  #hud{position:fixed;right:20px;bottom:16px;z-index:50;color:#9a9a9a;
+       font:600 14px/1 'SF Mono',Menlo,Consolas,monospace;letter-spacing:.1em;}
+  #hint{position:fixed;left:20px;bottom:15px;z-index:50;color:#6a6a6a;
+        font:500 12px/1 'SF Mono',Menlo,Consolas,monospace;letter-spacing:.06em;}
+  #notes{position:fixed;left:0;right:0;bottom:0;max-height:44vh;overflow:auto;z-index:60;display:none;
+         background:rgba(12,12,12,.97);color:#ededed;border-top:3px solid #FF6A00;
+         padding:24px 30px;font:400 19px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  #notes.show{display:block;}
+  #notes .meta{color:#FF9A57;font:700 14px/1 'SF Mono',Menlo,monospace;letter-spacing:.1em;
+               text-transform:uppercase;margin-bottom:12px;}
+  @media print{
+    html,body{background:#fff;overflow:visible;height:auto;}
+    #deck{position:static;display:block;}
+    #stage{transform:none !important;width:1920px;height:auto;}
+    #stage > section{display:flex !important;position:relative;inset:auto;width:1920px;height:1080px;page-break-after:always;}
+    #bar,#hud,#hint,#notes{display:none !important;}
+  }
+</style>
+</head>
+<body>
+<div id="deck"><div id="stage">
+
+  <!-- 1 Title -->
+  <section data-label="Title" data-speaker-notes="Warm open. In the next 2.5 hours you'll build a real agent, and ship it to your whole team by committing it. Not a toy. Something you'll actually keep." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 34px;font-weight:600;">Web Summer Camp · Opatija · hands-on · 2.5h</p>
+    <h1 style="font-family:Charter,'Bitstream Charter',Georgia,serif;font-size:132px;font-weight:700;line-height:1.02;letter-spacing:-2px;color:#111;margin:0;">Build a team agent<br>in Claude Code</h1>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:30px 0 0;"></div>
+    <h3 style="font-family:Charter,Georgia,serif;font-style:italic;font-weight:400;font-size:42px;color:#FF6A00;margin:34px 0 0;">research → a panel of agents → a published, discoverable stack</h3>
+    <p style="color:#6B6B6B;font-size:32px;margin:48px 0 0;">Martina Zrnec · Co-founder &amp; CTO, Stacklist · stacklist.com</p>
+  </section>
+
+  <!-- 2 Who I am -->
+  <section data-label="Who I am" data-speaker-notes="Keep it 60–90s. Establish credibility: you ship real agent infrastructure like Stacky, your MCP server, inside a real product. That's the authority behind everything that follows." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">Who I am</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:48px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:24px 0;">Martina Zrnec, <b style="color:#FF6A00;font-weight:700;">co-founder &amp; CTO</b> at Stacklist</li>
+      <li style="margin:24px 0;">I build &amp; run <b style="color:#FF6A00;font-weight:700;">Stacklist</b></li>
+      <li style="margin:24px 0;"><b style="color:#FF6A00;font-weight:700;">Stacky</b>, our MCP server, is how AI agents read Stacklist content</li>
+      <li style="margin:24px 0;">I build these for a living, today you'll build one too</li>
+    </ul>
+  </section>
+
+  <!-- 3 What is Stacklist -->
+  <section data-label="What's Stacklist" data-speaker-notes="~45s. Don't over-sell, just enough that the publish step lands later. Optionally show one beautiful public stack." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">What's Stacklist</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:48px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:24px 0;">Curated collections of links, <b style="color:#FF6A00;font-weight:700;">stacks</b> of <b style="color:#FF6A00;font-weight:700;">cards</b>.</li>
+      <li style="margin:24px 0;">Built to be <b style="color:#FF6A00;font-weight:700;">discoverable by AI search</b> (AEO/GEO), not just Google.</li>
+      <li style="margin:24px 0;">Save, organize &amp; share what's worth keeping, built to be found by AI, not buried</li>
+    </ul>
+    <p style="color:#6B6B6B;font-size:32px;margin:44px 0 0;">Later, our agent will publish straight into Stacklist, your product as the agent's tools.</p>
+  </section>
+
+  <!-- 4 The promise -->
+  <section data-label="What you'll leave with" data-speaker-notes="DO (45s): run /build-stack live, wired to Stacklist, on a topic. Let them see the finished thing. This is yours by the end." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">What you'll leave with</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:48px 0 0;font-size:44px;line-height:1.45;color:#111;">
+      <li style="margin:28px 0;">A working agent: <code style="background:#FFE2CC;color:#B34A00;padding:4px 12px;border-radius:8px;font-family:'SF Mono',Menlo,monospace;font-size:0.9em;">/build-stack "&lt;topic&gt;"</code></li>
+      <li style="margin:28px 0;">Living in a repo, <b style="color:#FF6A00;font-weight:700;">shared with your team by a git commit</b></li>
+      <li style="margin:28px 0;">And the pattern to build your own, for anything</li>
+    </ul>
+  </section>
+
+  <!-- 5 What even is an agent -->
+  <section data-label="What is an agent" data-speaker-notes="Demystify up front. The entire field is variations on this one sentence. Hold this, we'll trace how much of it we used to write vs write today." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 22px;font-weight:600;">first principles</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:84px;font-weight:700;line-height:1.06;color:#111;margin:0;">What even is an agent?</h2>
+    <blockquote style="border:none;margin:50px 0 0;padding:0;font-family:Charter,Georgia,serif;font-style:italic;font-size:56px;line-height:1.25;color:#111;">An LLM <b style="color:#FF6A00;font-weight:700;font-style:normal;">calling tools in a loop</b> until the task is done.</blockquote>
+    <pre style="background:#161616;border-radius:14px;padding:34px 42px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:28px;line-height:1.5;color:#E8E8E8;box-shadow:0 16px 48px rgba(0,0,0,0.18);margin:46px 0 0;white-space:pre-wrap;">ask the model (with tools) → wants a tool? run it, feed it back → repeat → done</pre>
+    <p style="color:#6B6B6B;font-size:30px;margin:34px 0 0;">That's the whole concept. Everything else is how much of that loop you write yourself.</p>
+  </section>
+
+  <!-- 6 Why they exist -->
+  <section data-label="Why agents exist" data-speaker-notes="Agents trade latency + cost for flexibility. The win is open-ended work with a feedback loop. Curate the best links on X is exactly this." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:72px;font-weight:700;line-height:1.08;color:#111;margin:0;">Why agents exist, what they buy you</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:46px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:24px 0;">The task is <b style="color:#FF6A00;font-weight:700;">open-ended</b>, no fixed script you could hardcode.</li>
+      <li style="margin:24px 0;">The model can <b style="color:#FF6A00;font-weight:700;">use tools &amp; react</b>, search, read, write, call APIs.</li>
+      <li style="margin:24px 0;">You can <b style="color:#FF6A00;font-weight:700;">verify</b> the result, so iteration is safe.</li>
+      <li style="margin:24px 0;">They do <b style="color:#FF6A00;font-weight:700;">real work while you don't watch</b>, that's the leverage.</li>
+    </ul>
+  </section>
+
+  <!-- 7 When NOT to -->
+  <section data-label="When NOT to" data-speaker-notes="Pre-empt the why-not-just-call-a-function reaction. Start simple; add agentic complexity only when warranted. Sets up the evolution story next." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">…and when NOT to</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:48px 0 0;font-size:44px;line-height:1.45;color:#111;">
+      <li style="margin:28px 0;">If a single prompt does it, use a single prompt.</li>
+      <li style="margin:28px 0;">If the steps are fixed, use a workflow, not an agent.</li>
+      <li style="margin:28px 0;">Reach for an agent only when the task is open-ended enough to earn it.</li>
+    </ul>
+    <p style="color:#6B6B6B;font-size:30px;margin:42px 0 0;">(This is also why an agent that does arithmetic is silly. A calculator is a function call, not an agent.)</p>
+  </section>
+
+  <!-- 8 Divider -->
+  <section data-label="Divider · Evolution" data-speaker-notes="The point of this section: the abstraction has climbed astonishingly fast, and the job is to climb with it." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#111111;color:#FAFAFA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF9A57;margin:0 0 30px;font-weight:600;">how we got here, fast</p>
+    <h1 style="font-family:Charter,Georgia,serif;font-size:128px;font-weight:700;line-height:1.02;letter-spacing:-2px;color:#FAFAFA;margin:0;">Two years,<br>four leaps</h1>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:34px 0 0;"></div>
+  </section>
+
+  <!-- 9 Timeline -->
+  <section data-label="Timeline" data-speaker-notes="Walk it top to bottom. Land each: we used to WRITE the loop; then we wrote WORKFLOWS around it; then the model drove; now the platform hands us all of it. Tie to your own history if you lived it." style="height:100%;box-sizing:border-box;padding:90px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:72px;font-weight:700;line-height:1.08;color:#111;margin:0;">From a loop to a platform</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:22px 0 0;"></div>
+    <div style="display:flex;flex-direction:column;margin:40px 0 0;">
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:32px;align-items:baseline;padding:24px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:26px;color:#FF6A00;font-weight:700;">~2023</span><span style="font-size:34px;line-height:1.35;"><b style="font-family:Charter,Georgia,serif;">One LLM call.</b> Prompt in, text out. No tools, no memory.</span></div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:32px;align-items:baseline;padding:24px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:26px;color:#FF6A00;font-weight:700;">then</span><span style="font-size:34px;line-height:1.35;"><b style="font-family:Charter,Georgia,serif;">The hand-rolled loop.</b> Give it tools, write the while-loop yourself. The first "agent." Powerful, and fiddly.</span></div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:32px;align-items:baseline;padding:24px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:26px;color:#FF6A00;font-weight:700;">then</span><span style="font-size:34px;line-height:1.35;"><b style="font-family:Charter,Georgia,serif;">Workflows.</b> Orchestrate calls on fixed paths, chain, route, parallelize. Predictable. The raw loop stopped being something you wrote by hand.</span></div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:32px;align-items:baseline;padding:24px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:26px;color:#FF6A00;font-weight:700;">then</span><span style="font-size:34px;line-height:1.35;"><b style="font-family:Charter,Georgia,serif;">Dynamic / agentic.</b> The model drives its own path &amp; tools. Workflows that decide their own steps.</span></div>
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:32px;align-items:baseline;padding:24px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:26px;color:#fff;font-weight:700;background:#FF6A00;border-radius:7px;padding:4px 12px;justify-self:start;">now</span><span style="font-size:34px;line-height:1.35;"><b style="font-family:Charter,Georgia,serif;">The platform.</b> Claude Code, subagents, MCP, the Agent SDK. The loop, the workflows, the orchestration, given to you. You compose; you don't re-implement.</span></div>
+    </div>
+  </section>
+
+  <!-- 10 The meta-point -->
+  <section data-label="The meta-point" data-speaker-notes="This is your thesis. The danger isn't the tech moving, it's building one rung below where the platform already is. Today we build at the current rung: Claude Code-native." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:72px;font-weight:700;line-height:1.08;color:#111;margin:0;">The actual skill: evolve alongside it</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:42px 0 0;font-size:40px;line-height:1.4;color:#111;">
+      <li style="margin:22px 0;">Each leap <b style="color:#FF6A00;font-weight:700;">retired hand-written plumbing</b> from the leap before.</li>
+      <li style="margin:22px 0;">The winners stop re-implementing what the platform now gives them…</li>
+      <li style="margin:22px 0;">…and spend that attention on <b style="color:#FF6A00;font-weight:700;">tools, composition, and shipping</b>.</li>
+    </ul>
+    <blockquote style="border:none;margin:46px 0 0;padding:0;font-family:Charter,Georgia,serif;font-style:italic;font-size:48px;line-height:1.25;color:#111;">Today we ride the abstraction all the way up, and build at the top of it.</blockquote>
+  </section>
+
+  <!-- 11 Divider -->
+  <section data-label="Divider · Today" data-speaker-notes="Build it, then ship it. A reusable agent in Claude Code, committed to a repo, run by your whole team." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#111111;color:#FAFAFA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF9A57;margin:0 0 30px;font-weight:600;">today</p>
+    <h1 style="font-family:Charter,Georgia,serif;font-size:128px;font-weight:700;line-height:1.02;letter-spacing:-2px;color:#FAFAFA;margin:0;">Build it.<br>Then ship it.</h1>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:34px 0 34px;"></div>
+    <p style="color:#C9C9C9;font-size:38px;margin:0;max-width:1200px;">A reusable agent in Claude Code, committed to a repo, run by your whole team.</p>
+  </section>
+
+  <!-- 12 Three ideas to hold -->
+  <section data-label="Three ideas" data-speaker-notes="These three are the takeaways. Everything in the build serves one of them." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:72px;font-weight:700;line-height:1.08;color:#111;margin:0;">Three ideas we'll prove with code</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:48px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:28px 0;">An <b style="color:#FF6A00;font-weight:700;">agent</b> is committable config, a markdown file, not a script.</li>
+      <li style="margin:28px 0;">An <b style="color:#FF6A00;font-weight:700;">orchestration</b> is composition, agents fanning out + a judge.</li>
+      <li style="margin:28px 0;"><b style="color:#FF6A00;font-weight:700;">Deploy = <code style="background:#FFE2CC;color:#B34A00;padding:4px 12px;border-radius:8px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">git commit</code></b>, and your product's MCP can be the agent's tools.</li>
+    </ul>
+  </section>
+
+  <!-- 13 Agenda / phases -->
+  <section data-label="Agenda" data-speaker-notes="Reassure: nobody gets stranded. The tags are the safety net. main is the finished repo." style="height:100%;box-sizing:border-box;padding:90px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:72px;font-weight:700;line-height:1.08;color:#111;margin:0;">What we'll cover, in phases</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:22px 0 0;"></div>
+    <div style="display:flex;flex-direction:column;margin:40px 0 0;">
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:baseline;padding:22px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:30px;color:#FF6A00;font-weight:700;">P1</span><span style="font-size:36px;">Your first subagent, a researcher</span></div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:baseline;padding:22px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:30px;color:#FF6A00;font-weight:700;">P2</span><span style="font-size:36px;">A review panel, three perspectives</span></div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:baseline;padding:22px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:30px;color:#FF6A00;font-weight:700;">P3</span><span style="font-size:36px;">The orchestrator + judge, <code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">/build-stack</code></span></div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:baseline;padding:22px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:30px;color:#FF6A00;font-weight:700;">P4</span><span style="font-size:36px;">Publish to Stacklist + discoverability check</span></div>
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:32px;align-items:baseline;padding:22px 0;border-top:1px solid #E6E6E6;"><span style="font-family:'SF Mono',Menlo,monospace;font-size:30px;color:#fff;font-weight:700;background:#FF6A00;border-radius:7px;padding:4px 14px;justify-self:start;">P5</span><span style="font-size:36px;">Deploy &amp; share, commit, teammate pulls, CI</span></div>
+    </div>
+    <p style="color:#6B6B6B;font-size:30px;margin:36px 0 0;">Every phase is a <code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">git</code> tag. Fall behind → <code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">git checkout phase-2</code> → you're caught up.</p>
+  </section>
+
+  <!-- 14 Keys & setup -->
+  <section data-label="Setup" data-speaker-notes="This is the slide you pause on while everyone gets their key in. The .env.example in the repo spells it out. No Python, no framework." style="height:100%;box-sizing:border-box;padding:90px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">Setup, one key</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:22px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:40px 0 0;font-size:38px;line-height:1.4;color:#111;">
+      <li style="margin:20px 0;"><b style="color:#FF6A00;font-weight:700;">Claude Code</b> installed · <b style="color:#FF6A00;font-weight:700;">git</b> · the repo cloned</li>
+      <li style="margin:20px 0;"><b style="color:#FF6A00;font-weight:700;">ANTHROPIC_API_KEY</b>, provided here. Web search &amp; fetch are built in; <em>no extra key.</em></li>
+      <li style="margin:20px 0;">Stacklist credential, <em>optional</em>, only to publish for real (else it writes a local file)</li>
+    </ul>
+    <pre style="background:#161616;border-radius:14px;padding:32px 40px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:27px;line-height:1.55;color:#E8E8E8;box-shadow:0 16px 48px rgba(0,0,0,0.18);margin:36px 0 0;white-space:pre;">cp .env.example .env      <span style="color:#7E8A7E;">// fill in ANTHROPIC_API_KEY</span>
+set -a &amp;&amp; source .env &amp;&amp; set +a
+claude                    <span style="color:#7E8A7E;">// open Claude Code in the repo</span></pre>
+  </section>
+
+  <!-- 15 Phase 1 -->
+  <section data-label="P1 · Agent is a file" data-speaker-notes="Open .claude/agents/link-researcher.md live. Run it. Show the isolated context, the main chat stays clean. CHECKPOINT: everyone gets a candidate list." style="height:100%;box-sizing:border-box;padding:90px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 18px;font-weight:600;">phase 1</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:84px;font-weight:700;line-height:1.06;color:#111;margin:0;">An agent is a file</h2>
+    <pre style="background:#161616;border-radius:14px;padding:34px 42px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:27px;line-height:1.5;color:#E8E8E8;box-shadow:0 16px 48px rgba(0,0,0,0.18);margin:40px 0 0;white-space:pre;"><div><span style="color:#7E8A7E;">---</span></div><div><span style="color:#FF9A57;">name:</span> link-researcher</div><div><span style="color:#FF9A57;">description:</span> Finds strong candidate links for a topic. Use this first.</div><div><span style="color:#FF9A57;">tools:</span> WebSearch, WebFetch     <span style="color:#7E8A7E;">// blast radius: search &amp; fetch, nothing else</span></div><div><span style="color:#FF9A57;">model:</span> sonnet</div><div><span style="color:#7E8A7E;">---</span></div><div>You are a research specialist. Given a TOPIC, find the strongest...</div></pre>
+    <p style="color:#6B6B6B;font-size:30px;margin:32px 0 0;"><code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.9em;">description</code> = how the lead delegates. <code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.9em;">tools</code> = what it's allowed to touch.</p>
+  </section>
+
+  <!-- 16 Phase 2 -->
+  <section data-label="P2 · A panel" data-speaker-notes="Why three agents not one prompt: one prompt blends the lenses in one context + one bias. Three isolated agents commit to positions. That independence is the value." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 18px;font-weight:600;">phase 2</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:84px;font-weight:700;line-height:1.06;color:#111;margin:0;">A panel beats one opinion</h2>
+    <ul style="list-style:disc;padding-left:42px;margin:46px 0 0;font-size:44px;line-height:1.45;color:#111;">
+      <li style="margin:28px 0;">Three reviewers: <b style="color:#FF6A00;font-weight:700;">credibility · freshness · fit</b></li>
+      <li style="margin:28px 0;">Each owns ONE lens · same cheap model · run in parallel</li>
+      <li style="margin:28px 0;">Independent contexts → real disagreement to resolve</li>
+    </ul>
+  </section>
+
+  <!-- 17 Phase 3 -->
+  <section data-label="P3 · Orchestrate + judge" data-speaker-notes="THE checkpoint that matters. Crowd-source a topic, run /build-stack. One line in → a reasoned, ranked stack out. You never hard-coded which links win. This is the same orchestration, simplified." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 18px;font-weight:600;">phase 3</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:84px;font-weight:700;line-height:1.06;color:#111;margin:0;">Orchestrate, then judge</h2>
+    <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;margin:54px 0 0;">
+      <span style="border:2px solid #FF6A00;border-radius:14px;padding:16px 26px;background:#fff;font-weight:600;font-size:30px;">topic</span>
+      <span style="color:#FF6A00;font-size:44px;font-weight:700;">→</span>
+      <span style="border:2px solid #FF6A00;border-radius:14px;padding:16px 26px;background:#fff;font-weight:600;font-size:30px;">researcher</span>
+      <span style="color:#FF6A00;font-size:44px;font-weight:700;">→</span>
+      <span style="border:2px solid #FF6A00;border-radius:14px;padding:14px 26px;background:#fff;font-weight:600;font-size:27px;display:flex;flex-direction:column;gap:8px;"><span>credibility</span><span>freshness</span><span>fit</span></span>
+      <span style="color:#FF6A00;font-size:44px;font-weight:700;">→</span>
+      <span style="border:2px solid #FF6A00;border-radius:14px;padding:16px 30px;background:#FF6A00;color:#fff;font-weight:700;font-size:30px;">judge</span>
+      <span style="color:#FF6A00;font-size:44px;font-weight:700;">→</span>
+      <span style="border:2px solid #FF6A00;border-radius:14px;padding:16px 26px;background:#fff;font-weight:600;font-size:30px;">stack</span>
+    </div>
+    <p style="color:#6B6B6B;font-size:32px;margin:50px 0 0;"><code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.9em;">/build-stack</code> fans out in parallel; the lead agent is the judge.</p>
+  </section>
+
+  <!-- 18 Phase 4 -->
+  <section data-label="P4 · Product as tools" data-speaker-notes="Run the connected version on your account → a live, discoverable stack appears. The big idea: an MCP server turns any product into agent tooling." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 18px;font-weight:600;">phase 4 · the product moment</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:80px;font-weight:700;line-height:1.06;color:#111;margin:0;">Your product = the agent's tools</h2>
+    <ul style="list-style:disc;padding-left:42px;margin:46px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:26px 0;">Default: writes <code style="background:#FFE2CC;color:#B34A00;padding:4px 12px;border-radius:8px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">output/&lt;slug&gt;.md</code>, works with no account</li>
+      <li style="margin:26px 0;">Connect the <b style="color:#FF6A00;font-weight:700;">Stacklist MCP</b> + allow its tools → it publishes for real</li>
+      <li style="margin:26px 0;">+ an <b style="color:#FF6A00;font-weight:700;">AI-discoverability</b> check on the way out</li>
+    </ul>
+    <p style="color:#6B6B6B;font-size:30px;margin:42px 0 0;">The agent didn't change, you widened its allowlist to include your product.</p>
+  </section>
+
+  <!-- 19 Phase 5 -->
+  <section data-label="P5 · Deploy = commit" data-speaker-notes="The repo IS the distribution mechanism. Update an agent, commit, the team gets it on next pull. Show weekly-stack.yml. This is why we built in Claude Code, not a script." style="height:100%;box-sizing:border-box;padding:90px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <p style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:24px;letter-spacing:5px;text-transform:uppercase;color:#FF6A00;margin:0 0 18px;font-weight:600;">phase 5 · the payoff</p>
+    <h2 style="font-family:Charter,Georgia,serif;font-size:84px;font-weight:700;line-height:1.06;color:#111;margin:0;">Deploy = git commit</h2>
+    <pre style="background:#161616;border-radius:14px;padding:34px 42px;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:27px;line-height:1.55;color:#E8E8E8;box-shadow:0 16px 48px rgba(0,0,0,0.18);margin:40px 0 0;white-space:pre-wrap;">git add .claude CLAUDE.md &amp;&amp; git commit -m "Add /build-stack" &amp;&amp; git push
+<span style="color:#7E8A7E;">// teammate:</span>
+git pull &amp;&amp; claude
+<span style="color:#FF9A57;">&gt;</span> /build-stack "self-hosting your analytics"     <span style="color:#7E8A7E;">// zero setup</span></pre>
+    <p style="color:#6B6B6B;font-size:30px;margin:34px 0 0;">Same agent, headless in CI (<code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.9em;">claude -p</code>) on a schedule. Wrote it once.</p>
+  </section>
+
+  <!-- 20 What bites -->
+  <section data-label="What bites" data-speaker-notes="Map each back to something they saw: the tools allowlist, the Haiku panel vs the judge, the description field. Concrete beats abstract." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">What bites in production</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:44px 0 0;font-size:40px;line-height:1.4;color:#111;">
+      <li style="margin:24px 0;"><b style="color:#FF6A00;font-weight:700;">Tool sprawl</b>, if a human can't pick the tool, neither can the model</li>
+      <li style="margin:24px 0;"><b style="color:#FF6A00;font-weight:700;">Context rot</b>, histories fill, recall degrades</li>
+      <li style="margin:24px 0;"><b style="color:#FF6A00;font-weight:700;">Vague <code style="background:#FFE2CC;color:#B34A00;padding:3px 10px;border-radius:7px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">description</code>s</b>, that's the delegation prompt</li>
+      <li style="margin:24px 0;"><b style="color:#FF6A00;font-weight:700;">Cost</b>, orchestration multiplies tokens; tier your models</li>
+    </ul>
+  </section>
+
+  <!-- 21 Evolve -->
+  <section data-label="Keep climbing" data-speaker-notes="Return to the thesis. They came in able to USE agents; they leave able to BUILD and SHIP them, at the current rung." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#FAFAFA;color:#111;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h2 style="font-family:Charter,Georgia,serif;font-size:78px;font-weight:700;line-height:1.08;color:#111;margin:0;">Keep climbing</h2>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:24px 0 0;"></div>
+    <ul style="list-style:disc;padding-left:42px;margin:46px 0 0;font-size:42px;line-height:1.45;color:#111;">
+      <li style="margin:28px 0;">Give panelists real tools · loop-to-consensus · a code-review panel on your repo</li>
+      <li style="margin:28px 0;">Embed it: the <b style="color:#FF6A00;font-weight:700;">Agent SDK</b> · agent teams for debate</li>
+      <li style="margin:28px 0;">The platform will move again, build at the top rung, every time</li>
+    </ul>
+  </section>
+
+  <!-- 22 Close -->
+  <section data-label="Thank you" data-speaker-notes="Take the room's questions. Point them at the phase docs to redo it at home, and at the Anthropic links in the README." style="height:100%;box-sizing:border-box;padding:110px 120px;display:flex;flex-direction:column;justify-content:center;background:#111111;color:#FAFAFA;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <h1 style="font-family:Charter,Georgia,serif;font-size:128px;font-weight:700;line-height:1.02;letter-spacing:-2px;color:#FAFAFA;margin:0;">Thank you</h1>
+    <div style="width:96px;height:8px;background:#FF6A00;border-radius:4px;margin:34px 0 34px;"></div>
+    <p style="color:#C9C9C9;font-size:38px;margin:0;">The repo is yours, <code style="background:#2a2a2a;color:#FF9A57;padding:4px 12px;border-radius:8px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">README.md</code> + <code style="background:#2a2a2a;color:#FF9A57;padding:4px 12px;border-radius:8px;font-family:'SF Mono',Menlo,monospace;font-size:0.85em;">phases/</code> + the links.</p>
+    <p style="color:#8A8A8A;font-size:30px;margin:30px 0 0;">Martina Zrnec · stacklist.com/martina · linkedin.com/in/martina-zrnec</p>
+  </section>
+
+</div></div>
+
+<div id="bar"></div>
+<div id="hud">1 / 22</div>
+<div id="hint">←  →  navigate  ·  S  notes  ·  F  fullscreen</div>
+<div id="notes"></div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const slides = [...stage.querySelectorAll(':scope > section')];
+  const bar = document.getElementById('bar');
+  const hud = document.getElementById('hud');
+  const notes = document.getElementById('notes');
+  let i = 0;
+
+  function fit(){
+    const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  function esc(t){ return (t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function renderNotes(){
+    const sec = slides[i];
+    notes.innerHTML =
+      '<div class="meta">' + (i + 1) + ' / ' + slides.length + ' · ' +
+      esc(sec.getAttribute('data-label')) + '</div>' +
+      esc(sec.getAttribute('data-speaker-notes') || '(no notes)');
+  }
+  function show(n){
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    bar.style.width = ((i + 1) / slides.length * 100) + '%';
+    hud.textContent = (i + 1) + ' / ' + slides.length;
+    if (notes.classList.contains('show')) renderNotes();
+    history.replaceState(null, '', '#' + (i + 1));
+  }
+  addEventListener('keydown', e => {
+    if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { show(i + 1); e.preventDefault(); }
+    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { show(i - 1); }
+    else if (e.key === 'Home') { show(0); }
+    else if (e.key === 'End') { show(slides.length - 1); }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+    else if (e.key === 's' || e.key === 'S' || e.key === 'n' || e.key === 'N') {
+      notes.classList.toggle('show'); renderNotes();
+    }
+    else if (e.key === 'Escape') { notes.classList.remove('show'); }
+  });
+  addEventListener('resize', fit);
+  const start = parseInt((location.hash || '').slice(1), 10);
+  show(isNaN(start) ? 0 : start - 1);
+  fit();
+</script>
+</body>
+</html>
